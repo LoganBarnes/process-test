@@ -8,16 +8,41 @@ namespace bp = boost::process;
 class Python
 {
 public:
-    Python() : pipe_from_python_(ios_), pipe_to_python_(ios_)
+    Python()
+        : cout_pipe_(ios_)
+        , cerr_pipe_(ios_)
+        , python_(bp::search_path("python3"),
+                  bp::std_out > cout_pipe_,
+                  bp::std_err > cerr_pipe_)
+//                  bp::std_in < cin_to_python_)
     {
-        python_ = bp::child(bp::search_path("python3"), bp::std_out > pipe_from_python_, bp::std_in < pipe_to_python_);
+//        std::string s = "\n";
+//        boost::system::error_code e;
+//
+//        for (int i = 0 ;i < 5; ++i) {
+//            auto sent = boost::asio::write(cin_pipe_, boost::asio::buffer(s), e);
+//            std::cout << "Sent: " << sent << std::endl;
+//
+//            if (e) {
+//                std::cerr << "ERROR: " << e.message() << std::endl;
+//            }
+//        }
+//        cin_to_python_ << bp::opstream::eofbit;
+//        python_.
 
-        input_to_python_ = "";
-        boost::asio::async_read(pipe_from_python_,
-                                boost::asio::buffer(output_from_python_),
-                                [this](const boost::system::error_code &ec, std::size_t size) {
-                                    this->handle_read(ec, size);
-                                });
+        boost::asio::async_read_until(cout_pipe_,
+                                      cout_buffer_,
+                                      ' ',
+                                      [this](const boost::system::error_code &ec, std::size_t size) {
+                                          this->handle_read(ec, size, true);
+                                      });
+
+        boost::asio::async_read_until(cerr_pipe_,
+                                      cerr_buffer_,
+                                      ' ',
+                                      [this](const boost::system::error_code &ec, std::size_t size) {
+                                          this->handle_read(ec, size, false);
+                                      });
     }
 
     void run()
@@ -27,15 +52,41 @@ public:
         std::cout << "python3 exited with error code " << python_.exit_code() << std::endl;
     }
 
-    void handle_read(const boost::system::error_code &ec, std::size_t size)
+    void handle_read(const boost::system::error_code &ec, std::size_t size, bool is_cout)
     {
+        auto &pipe = (is_cout ? cout_pipe_ : cerr_pipe_);
+        auto &buffer = (is_cout ? cout_buffer_ : cerr_buffer_);
+        auto &stream = (is_cout ? std::cout : std::cerr);
+
         if (ec) {
             std::cerr << ec.message() << std::endl;
         } else {
-            std::cout << output_from_python_.size() << " : " << size << std::endl;
-            assert(output_from_python_.size() == size);
+            std::string result;
 
-            std::cout << output_from_python_.data() << std::endl;
+            if (size != 0) {
+                std::istream is(&buffer);
+                std::getline(is, result, ' ');
+                result += ' ';
+                stream << result << std::flush;
+            }
+//
+//            if (result.find_first_of(">>>") != std::string::npos) {
+//                //                std::string input_to_python;
+//                //                std::cin >> input_to_python;
+//                std::cout << "do input" << std::endl;
+//                //            boost::asio::async_write(pipe_to_python_,
+//                //                                     boost::asio::buffer(input_to_python_),
+//                //                                     [this](const boost::system::error_code &ec, std::size_t size) {
+//                //                                         this->handle_write(ec, size);
+//                //                                     });
+//            } else {
+                boost::asio::async_read_until(pipe,
+                                              buffer,
+                                              ' ',
+                                              [this](const boost::system::error_code &ec, std::size_t size) {
+                                                  this->handle_read(ec, size, false);
+                                              });
+//            }
 
             //            std::cin >> input_to_python_;
             //            boost::asio::async_write(pipe_to_python_,
@@ -66,13 +117,14 @@ public:
 private:
     boost::asio::io_service ios_;
 
-    bp::async_pipe pipe_from_python_;
-    bp::async_pipe pipe_to_python_;
+    bp::async_pipe cout_pipe_;
+    bp::async_pipe cerr_pipe_;
+    bp::opstream cin_to_python_;
 
     bp::child python_;
 
-    std::vector<char> output_from_python_;
-    std::string input_to_python_;
+    boost::asio::streambuf cout_buffer_;
+    boost::asio::streambuf cerr_buffer_;
 };
 
 // expecting ">>>" or "..."
@@ -91,9 +143,6 @@ void handle_read(const boost::system::error_code &ec,
     if (ec) {
         std::cerr << ec.message() << std::endl;
     } else {
-//        std::cout << buf.size() << " : " << size << std::endl;
-        //        assert(buf.size() == size);
-
         std::string result;
 
         if (size != 0) {
@@ -103,14 +152,15 @@ void handle_read(const boost::system::error_code &ec,
             stream << result << std::flush;
         }
 
-        if (ready_for_input(result)) {
-            std::cout << "do input here" << std::endl;
+        if (result.find_first_of(">>>") != std::string::npos) {
+            std::string input_to_python;
+            std::cin >> input_to_python;
+            //            boost::asio::async_write(pipe_to_python_,
+            //                                     boost::asio::buffer(input_to_python_),
+            //                                     [this](const boost::system::error_code &ec, std::size_t size) {
+            //                                         this->handle_write(ec, size);
+            //                                     });
         } else {
-            //            boost::asio::async_read(pipe,
-            //                                    buf,
-            //                                    [&](const boost::system::error_code &ec, std::size_t size) {
-            //                                        handle_read(ec, size, pipe, buf);
-            //                                    });
             boost::asio::async_read_until(pipe, buf, ' ', [&](const boost::system::error_code &ec, std::size_t size) {
                 handle_read(ec, size, pipe, buf, stream);
             });
@@ -118,9 +168,24 @@ void handle_read(const boost::system::error_code &ec,
     }
 };
 
+//void handle_write(const boost::system::error_code &ec, std::size_t size)
+//{
+//    if (ec) {
+//        std::cerr << ec.message() << std::endl;
+//    } else {
+//        input_to_python_ = "";
+//
+//        boost::asio::async_read(pipe_from_python_,
+//                                boost::asio::buffer(output_from_python_),
+//                                [this](const boost::system::error_code &ec, std::size_t size) {
+//                                    this->handle_read(ec, size);
+//                                });
+//    }
+//}
+
 int main()
 {
-#if 0
+#if 1
     Python python;
     python.run();
 #else
