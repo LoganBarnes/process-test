@@ -11,24 +11,22 @@ public:
     Python()
         : cout_pipe_(ios_)
         , cerr_pipe_(ios_)
-        , python_(bp::search_path("python3"),
-                  bp::std_out > cout_pipe_,
-                  bp::std_err > cerr_pipe_)
-//                  bp::std_in < cin_to_python_)
+        , python_(bp::search_path("python3"), bp::std_out > cout_pipe_, bp::std_err > cerr_pipe_)
+    //                  bp::std_in < cin_to_python_)
     {
-//        std::string s = "\n";
-//        boost::system::error_code e;
-//
-//        for (int i = 0 ;i < 5; ++i) {
-//            auto sent = boost::asio::write(cin_pipe_, boost::asio::buffer(s), e);
-//            std::cout << "Sent: " << sent << std::endl;
-//
-//            if (e) {
-//                std::cerr << "ERROR: " << e.message() << std::endl;
-//            }
-//        }
-//        cin_to_python_ << bp::opstream::eofbit;
-//        python_.
+        //        std::string s = "\n";
+        //        boost::system::error_code e;
+        //
+        //        for (int i = 0 ;i < 5; ++i) {
+        //            auto sent = boost::asio::write(cin_pipe_, boost::asio::buffer(s), e);
+        //            std::cout << "Sent: " << sent << std::endl;
+        //
+        //            if (e) {
+        //                std::cerr << "ERROR: " << e.message() << std::endl;
+        //            }
+        //        }
+        //        cin_to_python_ << bp::opstream::eofbit;
+        //        python_.
 
         boost::asio::async_read_until(cout_pipe_,
                                       cout_buffer_,
@@ -69,24 +67,24 @@ public:
                 result += ' ';
                 stream << result << std::flush;
             }
-//
-//            if (result.find_first_of(">>>") != std::string::npos) {
-//                //                std::string input_to_python;
-//                //                std::cin >> input_to_python;
-//                std::cout << "do input" << std::endl;
-//                //            boost::asio::async_write(pipe_to_python_,
-//                //                                     boost::asio::buffer(input_to_python_),
-//                //                                     [this](const boost::system::error_code &ec, std::size_t size) {
-//                //                                         this->handle_write(ec, size);
-//                //                                     });
-//            } else {
-                boost::asio::async_read_until(pipe,
-                                              buffer,
-                                              ' ',
-                                              [this](const boost::system::error_code &ec, std::size_t size) {
-                                                  this->handle_read(ec, size, false);
-                                              });
-//            }
+            //
+            //            if (result.find_first_of(">>>") != std::string::npos) {
+            //                //                std::string input_to_python;
+            //                //                std::cin >> input_to_python;
+            //                std::cout << "do input" << std::endl;
+            //                //            boost::asio::async_write(pipe_to_python_,
+            //                //                                     boost::asio::buffer(input_to_python_),
+            //                //                                     [this](const boost::system::error_code &ec, std::size_t size) {
+            //                //                                         this->handle_write(ec, size);
+            //                //                                     });
+            //            } else {
+            boost::asio::async_read_until(pipe,
+                                          buffer,
+                                          ' ',
+                                          [this](const boost::system::error_code &ec, std::size_t size) {
+                                              this->handle_read(ec, size, false);
+                                          });
+            //            }
 
             //            std::cin >> input_to_python_;
             //            boost::asio::async_write(pipe_to_python_,
