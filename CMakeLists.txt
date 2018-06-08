@@ -16,3 +16,7 @@ target_link_libraries(Pipes Boost::filesystem)
 add_executable(Pipes2 main2.cpp)
 target_link_libraries(Pipes2 Threads::Threads)
 target_link_libraries(Pipes2 Boost::filesystem)
+
+add_executable(Pipes3 main3.cpp)
+target_link_libraries(Pipes3 Threads::Threads)
+target_link_libraries(Pipes3 Boost::filesystem)

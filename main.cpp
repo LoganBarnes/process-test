@@ -19,7 +19,6 @@ public:
                   "-i",
                   bp::std_out > cout_pipe_,
                   bp::std_err > cerr_pipe_,
-                  //                      bp::std_in.close())
                   bp::std_in < cin_to_python_)
     {
         //        std::string s = "\n";
@@ -44,12 +43,12 @@ public:
                                           this->handle_read(ec, size, true);
                                       });
 
-        boost::asio::async_read_until(cerr_pipe_,
-                                      cerr_buffer_,
-                                      ' ',
-                                      [this](const boost::system::error_code &ec, std::size_t size) {
-                                          this->handle_read(ec, size, false);
-                                      });
+        //        boost::asio::async_read_until(cerr_pipe_,
+        //                                      cerr_buffer_,
+        //                                      ' ',
+        //                                      [this](const boost::system::error_code &ec, std::size_t size) {
+        //                                          this->handle_read(ec, size, false);
+        //                                      });
     }
 
     void run()
@@ -77,7 +76,7 @@ public:
                 stream << result << std::flush;
             }
 
-            if (result.find(">>>") != std::string::npos || result.find("...") != std::string::npos) {
+            if ((result.find(">>>") != std::string::npos || result.find("...") != std::string::npos)) {
                 std::string input_to_python;
                 std::getline(std::cin, input_to_python);
 
