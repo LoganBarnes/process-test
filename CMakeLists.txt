@@ -23,3 +23,5 @@ add_executable(Pipes3 main3.cpp)
 target_link_libraries(Pipes3 Threads::Threads)
 target_link_libraries(Pipes3 Boost::filesystem)
 target_link_libraries(Pipes3 Boost::regex)
+
+add_executable(SO minimal.cpp)
