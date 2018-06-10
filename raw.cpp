@@ -13,6 +13,9 @@
 #include <algorithm>
 #include <cctype>
 #include <locale>
+#include <thread>
+
+//#define THREAD
 
 // trim from start (in place)
 static inline void ltrim(std::string &s)
@@ -108,7 +111,7 @@ int main()
             throw std::runtime_error("Failed to duplicate cout pipe");
         }
 
-        if (dup2(python_cout[WRITE], STDERR_FILENO) == -1) {
+        if (dup2(python_cerr[WRITE], STDERR_FILENO) == -1) {
             throw std::runtime_error("Failed to duplicate cerr pipe");
         }
 
@@ -132,10 +135,10 @@ int main()
             std::perror("cout fcntl");
             return EXIT_FAILURE;
         }
-        //        if (fcntl(python_cerr[READ], F_SETFL, fcntl(python_cerr[READ], F_GETFL) | O_NONBLOCK) > 0) {
-        //            std::perror("cerr fcntl");
-        //            return EXIT_FAILURE;
-        //        }
+        if (fcntl(python_cerr[READ], F_SETFL, fcntl(python_cerr[READ], F_GETFL) | O_NONBLOCK) > 0) {
+            std::perror("cerr fcntl");
+            return EXIT_FAILURE;
+        }
 
         std::string input;
         char buf;
@@ -158,23 +161,30 @@ int main()
                 }
             }
 
-            //            while (read(python_cerr[READ], &buf, 1) > 0) {
-            //                ss << buf;
-            //                if (buf == '\n') {
-            //                    std::cerr << ss.str() << std::flush;
-            //                    ss.str("");
-            //                } else if (ss.str() == ">>> " || ss.str() == "... ") {
-            //                    std::cerr << ss.str() << std::flush;
-            //                    ss.str("");
-            //                    accept_input = true;
-            //                    break;
-            //                }
-            //            }
+            while (read(python_cerr[READ], &buf, 1) > 0) {
+                ss << buf;
+                if (buf == '\n') {
+                    std::cerr << ss.str() << std::flush;
+                    ss.str("");
+                } else if (ss.str() == ">>> " || ss.str() == "... ") {
+                    std::cerr << ss.str() << std::flush;
+                    ss.str("");
+                    accept_input = true;
+                    break;
+                }
+            }
 
             if (accept_input) {
-                std::getline(std::cin, input);
-                input += '\n';
-                write(python_cin[WRITE], input.c_str(), input.size());
+#ifdef THREAD
+                std::thread t([&] {
+#endif
+                    std::getline(std::cin, input);
+                    input += '\n';
+                    write(python_cin[WRITE], input.c_str(), input.size());
+#ifdef THREAD
+                });
+                t.detach();
+#endif
             }
         }
 

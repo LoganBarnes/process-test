@@ -1,25 +1,65 @@
 cmake_minimum_required(VERSION 3.10)
-project(Pipes)
+project(ImPython)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(THREADS_PREFER_PTHREAD_FLAG ON)
-find_package(Threads REQUIRED)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-find_package(Boost 1.65 REQUIRED COMPONENTS filesystem regex)
+######################
+### EXTERNAL REPOS ###
+######################
+include(DownloadProject)
 
-add_executable(Pipes main.cpp)
-target_link_libraries(Pipes Threads::Threads)
-target_link_libraries(Pipes Boost::filesystem)
-target_link_libraries(Pipes Boost::regex)
+# Download and unpack glfw at configure time
+download_project(PROJ glfw-dl
+        PREFIX thirdparty
+        GIT_REPOSITORY https://github.com/glfw/glfw.git
+        GIT_TAG master
+        UPDATE_DISCONNECTED ${UPDATE_STATUS}
+        ${QUIET_FLAG}
+        )
 
-add_executable(Pipes2 raw.cpp)
-target_link_libraries(Pipes2 Threads::Threads)
-target_link_libraries(Pipes2 Boost::filesystem)
-target_link_libraries(Pipes2 Boost::regex)
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
-add_executable(Pipes3 main3.cpp)
-target_link_libraries(Pipes3 Threads::Threads)
-target_link_libraries(Pipes3 Boost::filesystem)
-target_link_libraries(Pipes3 Boost::regex)
+# compile glfw with current project
+add_subdirectory(${glfw-dl_SOURCE_DIR} ${glfw-dl_BINARY_DIR})
+
+# Download and unpack imgui at configure time
+download_project(PROJ imgui-dl
+        PREFIX thirdparty
+        GIT_REPOSITORY https://github.com/ocornut/imgui.git
+        GIT_TAG v1.60
+        UPDATE_DISCONNECTED ${UPDATE_STATUS}
+        ${QUIET_FLAG}
+        )
+
+add_library(sim-thirdparty
+        # imgui
+        ${imgui-dl_SOURCE_DIR}/imconfig.h
+        ${imgui-dl_SOURCE_DIR}/imgui.cpp
+        ${imgui-dl_SOURCE_DIR}/imgui.h
+        ${imgui-dl_SOURCE_DIR}/imgui_demo.cpp
+        ${imgui-dl_SOURCE_DIR}/imgui_draw.cpp
+        ${imgui-dl_SOURCE_DIR}/imgui_internal.h
+        ${imgui-dl_SOURCE_DIR}/stb_rect_pack.h
+        ${imgui-dl_SOURCE_DIR}/stb_textedit.h
+        ${imgui-dl_SOURCE_DIR}/stb_truetype.h
+        ${imgui-dl_SOURCE_DIR}/examples/opengl3_example/imgui_impl_glfw_gl3.cpp
+        ${imgui-dl_SOURCE_DIR}/examples/opengl3_example/imgui_impl_glfw_gl3.h
+
+        src/thirdparty/gl3w/gl3w.c
+        src/thirdparty/gl3w/GL/gl3w.h
+        src/thirdparty/gl3w/GL/glcorearb.h
+        src/thirdparty/gl3w/KHR/khrplatform.h
+        )
+target_include_directories(sim-thirdparty SYSTEM PUBLIC
+        ${imgui-dl_SOURCE_DIR}
+        ${imgui-dl_SOURCE_DIR}/examples/opengl3_example
+        src/thirdparty/gl3w
+        )
+target_link_libraries(sim-thirdparty glfw)
+
+add_executable(SO minimal.cpp)
