@@ -36,7 +36,7 @@ download_project(PROJ imgui-dl
         ${QUIET_FLAG}
         )
 
-add_library(sim-thirdparty
+add_library(impy-thirdparty
         # imgui
         ${imgui-dl_SOURCE_DIR}/imconfig.h
         ${imgui-dl_SOURCE_DIR}/imgui.cpp
@@ -55,11 +55,16 @@ add_library(sim-thirdparty
         src/thirdparty/gl3w/GL/glcorearb.h
         src/thirdparty/gl3w/KHR/khrplatform.h
         )
-target_include_directories(sim-thirdparty SYSTEM PUBLIC
+target_include_directories(impy-thirdparty SYSTEM PUBLIC
         ${imgui-dl_SOURCE_DIR}
         ${imgui-dl_SOURCE_DIR}/examples/opengl3_example
         src/thirdparty/gl3w
         )
-target_link_libraries(sim-thirdparty glfw)
+target_link_libraries(impy-thirdparty glfw)
 
-add_executable(SO minimal.cpp)
+add_executable(impy
+        src/impy/main.cpp
+        src/impy/PythonConsole.cpp
+        src/impy/PythonConsole.hpp
+        )
+target_link_libraries(impy impy-thirdparty)
