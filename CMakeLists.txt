@@ -68,3 +68,5 @@ add_executable(impy
         src/impy/PythonConsole.hpp
         )
 target_link_libraries(impy impy-thirdparty)
+
+add_executable(impy-cli src/cli.cpp)

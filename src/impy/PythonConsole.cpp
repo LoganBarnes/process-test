@@ -156,6 +156,7 @@ void PythonConsole::write_python()
     history_ += output_ + input_;
     output_ = "";
 
+    // TODO: use custom callbacks and detect CTRL+D as EOF
     // Exit on "exit()" or "quit()"
     if (input_.find("quit()") != std::string::npos || input_.find("exit()") != std::string::npos) {
         glfwSetWindowShouldClose(window_.get(), true);
@@ -177,7 +178,7 @@ void PythonConsole::configure_gui(int w, int h)
     ImGui::Text("%s", output_.c_str());
     ImGui::SameLine();
 
-    char buf[1024];
+    char buf[1024] = {};
     ImGui::SetKeyboardFocusHere();
     if (ImGui::InputText("", buf, sizeof(buf), ImGuiInputTextFlags_EnterReturnsTrue)) {
         input_ = std::string(buf) + "\n";
